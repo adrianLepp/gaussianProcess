@@ -6,7 +6,7 @@ function [dxEst] = GPpredictBasisFct(K_y,x,dx,xs,xP,sigmaF,l,betaEst,H,hVector,p
     n = length(x);
     ks = zeros(n,1);
     for i = 1 : n
-         ks(i) = kernel(x(i,:),xs,sigmaF,l); 
+         ks(i) = squaredExponentialKernel(x(i,:),xs,sigmaF,l); 
     end
 
     dxEst = zeros(3,1);

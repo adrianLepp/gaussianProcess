@@ -1,7 +1,7 @@
 function [X_post] = lowVarianceSampling(x,w)
 %lowVarianceSampling: Resampling Method from Probalibistic Robots by Thrun
 %for PF
-%   x: Prio Particelset
+%   x: Prio Particleset
 %   w: weights
     M = length(x); 
     X_post = zeros(size(x));

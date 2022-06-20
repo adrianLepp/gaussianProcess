@@ -3,7 +3,7 @@
 %Author Adrian Lepp
 % Last change: 24.03.2022
 
-% new Version with nex and correct sovleThreeTank function
+% new Version with new and correct sovleThreeTank function
 
 % To Do: Varianz berechnen
 %           schlechte Parameter einbauen
@@ -11,6 +11,8 @@
 close all
 clear 
 clc
+
+addpath('helpfunctions','gpml-matlab-master');
 
 %% load parameters
     load 'threeTankData.mat'

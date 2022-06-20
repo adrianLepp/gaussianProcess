@@ -3,7 +3,7 @@
 %Author Adrian Lepp
 % Last change: 24.03.2022
 
-% new Version with nex and correct sovleThreeTank function
+% new Version with new and correct solveThreeTank function
 
 
 %% clear
@@ -18,7 +18,7 @@ clc
     n = length(xTrain);
 
 %% init
-S = 10;
+S = 10; % change number of particles
 T = 100; % Simulationsdauer (Sekunden)
 
 t = T/dt;
@@ -51,9 +51,9 @@ xEst = zeros(3,t);
 dxEst = zeros(3,t);
 sigmaXout = zeros(3,t);
 
-%% GP init
-    
-    theta = zeros(3,3,2); % no of hyperparameters, dimension of x, number of GP's
+%% GP init: set hyperparameters and calculate the covariance Matrix for test inputs
+
+    theta = zeros(3,3,2); % number of hyperparameters, dimension of x, number of GP's
     %sigmaF
     theta(1,:,1) = 100;
     theta(1,:,2) = 0.1;
@@ -70,16 +70,16 @@ sigmaXout = zeros(3,t);
     
     %GP 1: Prediction
     for i = 1 :3
-        K_ux(:,:,i) = CovMatrix([uTrain,xTrain],theta(1,i,1),theta(2,i,1));
-        K_dx(:,:,i) = (K_ux(:,:,i) + theta(3,i,1)*eye(n))^-1;
+        K_ux(:,:,i) = CovMatrix([uTrain,xTrain],theta(1,i,1),theta(2,i,1)); %K
+        K_dx(:,:,i) = (K_ux(:,:,i) + theta(3,i,1)*eye(n))^-1;               %(K + I *sigmaN)^-1
         logLikelihood_V1(dxTrain(:,i),K_ux(:,:,i),theta(3,i,1))
     end
     
     %GP 2: Observation
     K_x = zeros(n,n,3);
     for i = 1 :3
-        K_x(:,:,i) = CovMatrix(xTrain,theta(1,i,2),theta(2,i,2));
-        K_y(:,:,i) = (K_x(:,:,i) + theta(3,i,2)*eye(n))^-1;
+        K_x(:,:,i) = CovMatrix(xTrain,theta(1,i,2),theta(2,i,2));   %K
+        K_y(:,:,i) = (K_x(:,:,i) + theta(3,i,2)*eye(n))^-1;         %(K + I *sigmaN)^-1
         logLikelihood_V1(yTrain(:,i),K_x(:,:,i),theta(3,i,2))
     end   
     
@@ -120,9 +120,10 @@ for k = 1 : t
         wPost = wPost./summe;
     end
     %% a posteriori Partikel ziehen 
-    xPost = lowVarianceSampling(xPrio,wPost);
-    dxPost = lowVarianceSampling(dx,wPost);
-    s2Post = lowVarianceSampling(s2,wPost);
+    resampledParticles = lowVarianceSampling([xPrio; dx; s2],wPost);
+    xPost = resampledParticles(1:3,:);
+    dxPost = resampledParticles(4:6,:);
+    s2Post = resampledParticles(7:9,:);
     
     xEst(:,k) = [mean(xPost(1,:)); mean(xPost(2,:)); mean(xPost(3,:))];
     dxEst(:,k) = [mean(dxPost(1,:)); mean(dxPost(2,:)); mean(dxPost(3,:))];
@@ -134,18 +135,20 @@ end
  figure(1)
  plot(time, xOut(1,:),time, xOut(2,:),time, xOut(3,:), time, xEst(1,:), time, xEst(2,:), time, xEst(3,:));
  legend('x_1','x_2','x_3','x_1 est','x_2 est','x_3 est');
- 
+
+%Die Varianz ist sehr hoch hier: Das liegt an der Wahl der Hyperparameter.
+%Diese sind momentan schwer zu bestimmen.
 figure(2)
-f1 = [xOut(1,:)+2*sqrt(sigmaXout(1,:)), flip(xOut(1,:)-2*sqrt(sigmaXout(1,:)),2)];
-f2 = [xOut(2,:)+2*sqrt(sigmaXout(2,:)), flip(xOut(2,:)-2*sqrt(sigmaXout(2,:)),2)];
-f3 = [xOut(3,:)+2*sqrt(sigmaXout(3,:)), flip(xOut(3,:)-2*sqrt(sigmaXout(3,:)),2)];
+f1 = [dxEst(1,:)+2*sqrt(sigmaXout(1,:)), flip(dxEst(1,:)-2*sqrt(sigmaXout(1,:)),2)];
+f2 = [dxEst(2,:)+2*sqrt(sigmaXout(2,:)), flip(dxEst(2,:)-2*sqrt(sigmaXout(2,:)),2)];
+f3 = [dxEst(3,:)+2*sqrt(sigmaXout(3,:)), flip(dxEst(3,:)-2*sqrt(sigmaXout(3,:)),2)];
 fill([time, flip(time,2)], f1, [7 7 7]/8)
 hold on; 
 fill([time, flip(time,2)], f2, [7 7 7]/8)
 fill([time, flip(time,2)], f3, [7 7 7]/8)
 
 plot(time, dxEst(1,:), 'k', time, dxEst(2,:), 'b', time, dxEst(3,:), 'r');
-legend('Varianz Fuellstand Tank 1','Varianz Fuellstand Tank 3','Varianz Fuellstand Tank 3', 'realer Fuellstand Tank 1', 'Outputschaetzung Tank 1', 'realer Fuellstand Tank 2', 'Outputschaetzung Tank 2', 'realer Fuellstand Tank 3', 'Outputschaetzung Tank 3');
+legend('Varianz dx1','Varianz dx2','Varianz dx3', 'dx1 geschätzt', 'dx2 geschätzt', 'dx3 geschätzt');
 xlabel('Zeit t /s')
 ylabel('Fuellstand /m')
 hold off;

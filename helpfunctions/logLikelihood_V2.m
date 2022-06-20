@@ -1,5 +1,6 @@
 function logL = logLikelihood_V2(y,K,sigmaN)
     %Log Likelihood Version 2 with Cholesky
+    % Should be faster to compute (no inverse) but can be not computable
     n = length(y);
     L = chol(K+sigmaN ^2 * eye(n));
     alpha = L.'\(L\y);
