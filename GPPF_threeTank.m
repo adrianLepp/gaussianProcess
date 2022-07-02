@@ -20,6 +20,7 @@ clc
 %% init
 S = 10; % change number of particles
 T = 100; % Simulationsdauer (Sekunden)
+norm = 10;
 
 t = T/dt;
 
@@ -29,12 +30,14 @@ dx0 = zeros (3,1);
 u0 = uTrain(1);
 
 % noise
-sigmaX_default = diag([1e-09 1e-09 1e-09]);    % Systemrauschen
+parameter.sigmaX = parameter.sigmaX * norm;
+parameter.sigmaY = parameter.sigmaY * norm;
+sigmaX_default = diag([1e-09 1e-09 1e-09]) * norm;    % Systemrauschen
 s2 = zeros(3,S);
 s2Post = zeros(3,S);
-sigmaY = diag([5e-07 5e-07 5e-07]);    % Messrauschen
-sigmaY_default = 5e-07;
-V_mf = 1e-12;                       % Varianz des Fehlermittelwerts
+sigmaY = diag([5e-07 5e-07 5e-07]) * norm;    % Messrauschen
+sigmaY_default = 5e-07 * norm;
+V_mf = 1e-12 * norm;                       % Varianz des Fehlermittelwerts
 
 
 xPost = x0 .*ones(3,S) + sqrt(parameter.sigmaX)* randn(3,S);
@@ -68,6 +71,10 @@ sigmaXout = zeros(3,t);
     K_y = K_ux;
     K_dx = K_ux;
     
+    xTrain = xTrain .* norm;
+    dxTrain = dxTrain .* norm;
+    yTrain = yTrain .* norm;
+    
     %GP 1: Prediction
     for i = 1 :3
         K_ux(:,:,i) = CovMatrix([uTrain,xTrain],theta(1,i,1),theta(2,i,1)); %K
@@ -92,6 +99,8 @@ for k = 1 : t
     else
         [xOut(:,k),y] = solveThreeTank(xOut(:,k-1),parameter);
     end
+    xOut(:,k) = xOut(:,k) .* norm;
+    y = y .* norm;
     %% Partikelfilter loesen
     
     for l = 1 : S
@@ -99,8 +108,10 @@ for k = 1 : t
         
         %GP für Systemgleichung / prediction model
         for i = 1 : 3
-          [dx(i,l),s2(i,l)] = GPpredict_V1(K_dx(:,:,i),[uTrain,xTrain],dxTrain(:,i),[u0,xPost(:,l).'],theta(1,i,1),theta(2,i,1));  
+          [dx(i,l),s2(i,l)] = GPpredict_V1(K_dx(:,:,i),[uTrain,xTrain],dxTrain(:,i),[u0,xPost(:,l).'],theta(1,i,1),theta(2,i,1)); 
         end
+        %dx(i,l) = dx(i,l) .* norm;
+        %s2(i,l) = s2(i,l) .* norm;
         
         % Der Gp bestimmt nur dx, daher Addition mit x_post_k-1
         xPrio(:,l) = xPost(:,l) + dx(:,l) + sqrt(parameter.sigmaX) * [randn; randn; randn];
@@ -110,6 +121,8 @@ for k = 1 : t
         for i = 1 :3
             [yEst(i),sigmaY(i,i)] = GPpredict_V1(K_y(:,:,i),xTrain,yTrain(:,i),xPrio(:,l).',theta(1,i,2),theta(2,i,2));   
         end
+        %yEst = yEst .* norm;
+        %sigmaY = sigmaY .* norm;
 
         wPost(l) = 1/((det(2*pi*parameter.sigmaY))^(0.5)) * exp(-0.5*(yOut(:,k) - yEst).' * inv(parameter.sigmaY) * (yOut(:,k) - yEst));
         
