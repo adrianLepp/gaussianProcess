@@ -20,7 +20,7 @@ function [x_post_kk] = particlefilter(xPost,S,y,solveSystem,systemParameter)
         [xPrio(:,m),yTheor(:,m)] = solveSystem(xPost(:,m),systemParameter);
         
         %% Gewichte bestimmen
-        P_y = 1/((det(2*pi*parameter.sigmaY))^(0.5)) * exp(-0.5*(y - y_theor).' * inv(parameter.sigmaY) * (y - y_theor));
+        P_y = 1/((det(2*pi*systemParameter.sigmaY))^(0.5)) * exp(-0.5*(y - y_theor).' * inv(systemParameter.sigmaY) * (y - y_theor));
         w(m) = P_y; 
         if w(m) < 1e-30
             w(m) = 1e-30;
@@ -35,7 +35,9 @@ function [x_post_kk] = particlefilter(xPost,S,y,solveSystem,systemParameter)
     %end
     x_post_kk = lowVarianceSampling(xPrio,w);
     
-    x_post_kk(:,m) = x_post_kk(:,m) + sqrt(parameter.sigmaX) * [randn; randn; randn];
+    for m = 1 : S
+        x_post_kk(:,m) = x_post_kk(:,m) + sqrt(systemParameter.sigmaX) * [randn; randn; randn];
+    end
 
 end
 

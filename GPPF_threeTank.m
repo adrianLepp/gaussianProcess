@@ -12,22 +12,33 @@ clear
 clc
 
 %% load parameters
-    load 'threeTankData.mat'
+    %load 'threeTankData.mat'
+    load 'threeTankSim.mat'
     load 'dreiTank.mat'
     dt = parameter.dt;
-    n = length(xTrain);
+    n = length(xReduced);
+    
+    
+    load Parameter_Modell_1.mat;
+
+    parameter.c13 = c13;
+    parameter.c32 = c32;
+    parameter.cA2 = c13;
+    parameter.u = Q_z1_max;
+    parameter.A = 0.0154;
+    parameter.g = 9.81;
 
 %% init
 S = 10; % change number of particles
 T = 100; % Simulationsdauer (Sekunden)
-norm = 10;
+norm = 1;
 
 t = T/dt;
 
 % initial state
 x0 = zeros(3,1);
 dx0 = zeros (3,1);
-u0 = uTrain(1);
+u0 = 0;%uTrain(1);
 
 % noise
 parameter.sigmaX = parameter.sigmaX * norm;
@@ -58,36 +69,36 @@ sigmaXout = zeros(3,t);
 
     theta = zeros(3,3,2); % number of hyperparameters, dimension of x, number of GP's
     %sigmaF
-    theta(1,:,1) = 100;
+    theta(1,:,1) = 100;% 0.0056;
     theta(1,:,2) = 0.1;
     %l
-    theta(2,:,1) = 2;
+    theta(2,:,1) = 2;%1.7;
     theta(2,:,2) = 5;
     %sigmaN
-    theta(3,:,1) = 0.35;
+    theta(3,:,1) = 0.35;% 0.024;
     
     K_ux = zeros(n,n,3);
     K_x= K_ux;
     K_y = K_ux;
     K_dx = K_ux;
     
-    xTrain = xTrain .* norm;
-    dxTrain = dxTrain .* norm;
-    yTrain = yTrain .* norm;
+    xReduced = xReduced .* norm;
+    dxReduced = dxReduced .* norm;
+    yReduced = yReduced .* norm;
     
     %GP 1: Prediction
     for i = 1 :3
-        K_ux(:,:,i) = CovMatrix([uTrain,xTrain],theta(1,i,1),theta(2,i,1)); %K
+        K_ux(:,:,i) = CovMatrix(xReduced,theta(1,i,1),theta(2,i,1)); %K
         K_dx(:,:,i) = (K_ux(:,:,i) + theta(3,i,1)*eye(n))^-1;               %(K + I *sigmaN)^-1
-        logLikelihood_V1(dxTrain(:,i),K_ux(:,:,i),theta(3,i,1))
+        logLikelihood_V1(dxReduced(:,i),K_ux(:,:,i),theta(3,i,1))
     end
     
     %GP 2: Observation
     K_x = zeros(n,n,3);
     for i = 1 :3
-        K_x(:,:,i) = CovMatrix(xTrain,theta(1,i,2),theta(2,i,2));   %K
+        K_x(:,:,i) = CovMatrix(xReduced,theta(1,i,2),theta(2,i,2));   %K
         K_y(:,:,i) = (K_x(:,:,i) + theta(3,i,2)*eye(n))^-1;         %(K + I *sigmaN)^-1
-        logLikelihood_V1(yTrain(:,i),K_x(:,:,i),theta(3,i,2))
+        logLikelihood_V1(yReduced(:,i),K_x(:,:,i),theta(3,i,2))
     end   
     
 %% PF
@@ -108,7 +119,7 @@ for k = 1 : t
         
         %GP für Systemgleichung / prediction model
         for i = 1 : 3
-          [dx(i,l),s2(i,l)] = GPpredict_V1(K_dx(:,:,i),[uTrain,xTrain],dxTrain(:,i),[u0,xPost(:,l).'],theta(1,i,1),theta(2,i,1)); 
+          [dx(i,l),s2(i,l)] = GPpredict_V1(K_dx(:,:,i),xReduced,dxReduced(:,i),xPost(:,l).',theta(1,i,1),theta(2,i,1)); 
         end
         %dx(i,l) = dx(i,l) .* norm;
         %s2(i,l) = s2(i,l) .* norm;
@@ -119,7 +130,7 @@ for k = 1 : t
         %% Gewichte bestimmen
         % GP Für Ausgangsgleichung  / observation model
         for i = 1 :3
-            [yEst(i),sigmaY(i,i)] = GPpredict_V1(K_y(:,:,i),xTrain,yTrain(:,i),xPrio(:,l).',theta(1,i,2),theta(2,i,2));   
+            [yEst(i),sigmaY(i,i)] = GPpredict_V1(K_y(:,:,i),xReduced,yReduced(:,i),xPrio(:,l).',theta(1,i,2),theta(2,i,2));   
         end
         %yEst = yEst .* norm;
         %sigmaY = sigmaY .* norm;
