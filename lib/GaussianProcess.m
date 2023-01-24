@@ -20,6 +20,9 @@ classdef GaussianProcess < handle
         L
         Lt
         alpha
+        meanGP
+        H
+        meanCovMatrix
     end
     
     methods
@@ -30,10 +33,7 @@ classdef GaussianProcess < handle
             obj.m = size(xD,2);
             obj.hyperParameter = hyperParameter;
             obj.kernel = kernel;
-            obj.meanFct = meanFct;
-            
-            %% GP with basis functions and Gp parameters beta
-
+            obj.meanFct = meanFct;           
             
             %% Normalize 
             %Normalize in the C++ Way
@@ -54,7 +54,6 @@ classdef GaussianProcess < handle
                     obj.xD(l,i) = (xD(l,i) - obj.xMean(1,i)) / obj.xStd(1,i);
                 end
                 obj.yD(l,1) = (yD(l,1) - obj.yMean) / obj.yStd;
-                %obj.meanD(l,1) = (meanD(l,1) - obj.yMean) / obj.yStd;
             end
             
 %           Normalize in the Matlab way           
@@ -62,8 +61,6 @@ classdef GaussianProcess < handle
 %             obj.xMean = mean(xD);
 %             obj.yStd = std(yD);
 %             obj.yMean = mean(yD);
-%             
-%             
 %             obj.xD = (xD - obj.xMean)./ obj.xStd;
 %             obj.yD = (yD - obj.yMean)./ obj.yStd;
             
@@ -74,18 +71,23 @@ classdef GaussianProcess < handle
             %% GP with basis functions and Gp parameters beta. TODO: bad style.
             obj.meanD = zeros(obj.n,1);
             
-            H = zeros(2, obj.n);
-            b = obj.hyperParameter.beta;
-            noParam.beta = 1; % to calculate h without b, one can set b=1 and then transpose h again. Not best style though
-            for i = 1 : obj.n
-                H(:,i) = obj.meanFct(xD(i,:),noParam).';
-                for j = 1 : 2
-                    H(j,i) = (H(j,i) - obj.yMean) / obj.yStd;
+            if isfield(obj.hyperParameter, "beta")  && isfield(obj.hyperParameter, "B")
+                obj.meanGP = true;
+                obj.H = zeros(2, obj.n);
+                b = obj.hyperParameter.beta;
+                noParam.beta = 1; % to calculate h without b, one can set b=1 and then transpose h again. Not best style though
+                for i = 1 : obj.n
+                    obj.H(:,i) = obj.meanFct(xD(i,:),noParam).';
+                    for j = 1 : 2
+                        obj.H(j,i) = (obj.H(j,i) - obj.yMean) / obj.yStd;
+                    end
                 end
+
+                betaEst = (obj.hyperParameter.B^-1 + obj.H * obj.KyInv * obj.H.')^-1  * (obj.H * obj.KyInv * obj.yD + obj.hyperParameter.B^-1 * b);
+                obj.hyperParameter.beta = betaEst;
+                
+                obj.meanCovMatrix = (obj.hyperParameter.B^-1 + obj.H * obj.KyInv * obj.H.' )^-1;
             end
-            
-            betaEst = (obj.hyperParameter.B^-1 + H * obj.KyInv * H.')^-1  * (H * obj.KyInv * obj.yD + obj.hyperParameter.B^-1 * b);
-            obj.hyperParameter.beta = betaEst;
             
             meanD = zeros(obj.n,1);
             for i = 1 : obj.n
@@ -129,8 +131,23 @@ classdef GaussianProcess < handle
             std = (obj.kernel(xS,xS,obj.hyperParameter) - ks.'* obj.KyInv * ks);
             
             %yS = yS * obj.yStd + obj.yMean + obj.meanFct(xSIn, obj.hyperParameter);
+            % obj.yMean needs not to bo added for re-normalization because
+            % this is included in - obj.meanD.
             yS = yS * obj.yStd + obj.meanFct(xSIn, obj.hyperParameter);
+            
+            if obj.meanGP == true
+                noParam.beta = 1; % to calculate h without b, one can set b=1 and then transpose h again. Not best style though
+                Hs = obj.meanFct(xSIn,noParam).';
+          
+                for j = 1 : 2
+                    Hs(j,1) = (Hs(j,1) - obj.yMean) / obj.yStd;
+                end             
+                R = Hs - obj.H * obj.KyInv * ks;
+                std = std + R.' * obj.meanCovMatrix * R;
+            end
+            
             std = std * obj.yStd^2;
+            %TODO: variance for Basis Fcts
         end
         
         function [yS, std] = predictCholesky(obj, xS)
