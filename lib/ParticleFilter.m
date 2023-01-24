@@ -37,13 +37,15 @@ classdef ParticleFilter < handle
                 xPrio(l,:) = obj.system.stateTransition(obj.xPost(l,:),dt);
                 yCalc = obj.system.measurement(xPrio(l,:));
         
-                w(1,l) = 2*pi ^(- n / 2) * det(obj.system.sigmaY)^(-1/2) * exp(-1/2 * (y - yCalc) * inv(obj.system.sigmaY) * (y -yCalc).');
+                %w(1,l) = 2*pi ^(- n / 2) * det(obj.system.sigmaY)^(-1/2) * exp(-1/2 * (y - yCalc) * inv(obj.system.sigmaY) * (y - yCalc).');
+                w(1,l) = 2*pi ^(- n / 2) * det(obj.system.sigmaY)^(-1/2) * exp(-1/2 * (y - yCalc) * inv(obj.system.sigmaY) *  (y - yCalc).');
                 if w(1,l) < 1e-30
                     w(1,l) = 1e-30;
                 end
-                summe = sum(w);
-                w = w./summe;
+
             end
+            summe = sum(w);
+            w = w./summe;
 
             obj.xPost = lowVarianceSampling(xPrio,w,obj.s,obj.system.n);
 

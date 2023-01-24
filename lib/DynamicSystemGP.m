@@ -6,18 +6,18 @@ classdef DynamicSystemGP < DynamicSys
       measurementGP(:,1) GaussianProcess
     end
     methods
-      function obj = DynamicSystemGP(xD,dxD,yD,hyperparameter,kernel,sigmaX,sigmaY)
+      function obj = DynamicSystemGP(xD,dxD,yD,hyperparameter,kernel,mean,sigmaX,sigmaY)
            obj.n = size(xD,2);
            obj.m = size(yD,2);
            obj.sigmaX = sigmaX;
            obj.sigmaY = sigmaY;
 
            for i = 1 : obj.n
-               obj.transitionGP(i) = GaussianProcess(xD,dxD(:,i),hyperparameter,kernel);
+               obj.transitionGP(i) = GaussianProcess(xD,dxD(:,i),hyperparameter{i},kernel{i},mean{i});
            end
            
            for i = 1 : obj.m
-               obj.measurementGP(i) = GaussianProcess(xD,yD(:,i),hyperparameter,kernel);
+               obj.measurementGP(i) = GaussianProcess(xD,yD(:,i),hyperparameter{i},kernel{i},mean{i});
            end
       end
       

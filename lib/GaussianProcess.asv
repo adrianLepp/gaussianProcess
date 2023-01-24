@@ -41,6 +41,7 @@ classdef GaussianProcess < handle
             obj.xMean = zeros(1,obj.m);
             obj.xD = zeros(obj.n,obj.m);
             obj.yD = zeros(obj.n,1);
+            obj.meanD = zeros(obj.n,1);
             
             for i = 1 : obj.m
                 obj.xStd(1,i) = std(xD(:,i));
@@ -54,7 +55,7 @@ classdef GaussianProcess < handle
                     obj.xD(l,i) = (xD(l,i) - obj.xMean(1,i)) / obj.xStd(1,i);
                 end
                 obj.yD(l,1) = (yD(l,1) - obj.yMean) / obj.yStd;
-                %obj.meanD(l,1) = (meanD(l,1) - obj.yMean) / obj.yStd;
+                obj.meanD(l,1) = (meanD(l,1) - obj.yMean) / obj.yStd;
             end
             
 %           Normalize in the Matlab way           
@@ -71,12 +72,11 @@ classdef GaussianProcess < handle
             obj.K = CovMatrix(obj.xD, obj.hyperParameter,kernel);
             obj.KyInv = (obj.K + eye(obj.n) * hyperParameter.sigmaN )^-1 ;
             
-            %% GP with basis functions and Gp parameters beta. TODO: bad style.
-            obj.meanD = zeros(obj.n,1);
-            
+            %% GP with basis functions and Gp parameters beta !!!TODO!!! wrong place, bad style.
+            B = [ 0.0001 , 0 ; 0 , 0.0001]; 
             H = zeros(2, obj.n);
             b = obj.hyperParameter.beta;
-            noParam.beta = 1; % to calculate h without b, one can set b=1 and then transpose h again. Not best style though
+            noParam.beta = 1;
             for i = 1 : obj.n
                 H(:,i) = obj.meanFct(xD(i,:),noParam).';
                 for j = 1 : 2
@@ -84,8 +84,10 @@ classdef GaussianProcess < handle
                 end
             end
             
-            betaEst = (obj.hyperParameter.B^-1 + H * obj.KyInv * H.')^-1  * (H * obj.KyInv * obj.yD + obj.hyperParameter.B^-1 * b);
+            
+            betaEst = (B^-1 + H * obj.KyInv * H.')^-1 * (H * obj.KyInv * obj.yD + B^-1 * b);
             obj.hyperParameter.beta = betaEst;
+            
             
             meanD = zeros(obj.n,1);
             for i = 1 : obj.n
