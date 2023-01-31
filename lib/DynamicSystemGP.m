@@ -23,19 +23,20 @@ classdef DynamicSystemGP < DynamicSys
       
       function [xKK,dxKK, sigma] = stateTransition(obj,xK,dt)
           dxKK = zeros(1,obj.n);
-          sigma = zeros(1,obj.n);
+          sigma = zeros(obj.n,obj.n);
           for i = 1 : obj.n
-              [dxKK(i), sigma(i)] = obj.transitionGP(i).predict(xK);
+              [dxKK(i), sigma(i,i)] = obj.transitionGP(i).predict(xK);
           end
           
           xKK = xK + dxKK;
           
       end
       
-      function yKK = measurement(obj,xKK)
+      function [yKK,sigma] = measurement(obj,xKK)
           yKK = zeros(1,obj.m);
+           sigma = zeros(obj.m,obj.m);
           for i = 1 : obj.m
-              yKK(i) = obj.measurementGP(i).predict(xKK);
+              [yKK(i),sigma(i,i)] = obj.measurementGP(i).predict(xKK);
           end
       end
    end

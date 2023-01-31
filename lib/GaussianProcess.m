@@ -147,7 +147,6 @@ classdef GaussianProcess < handle
             end
             
             std = std * obj.yStd^2;
-            %TODO: variance for Basis Fcts
         end
         
         function [yS, std] = predictCholesky(obj, xS)
@@ -175,6 +174,24 @@ classdef GaussianProcess < handle
             yS = y_mu * obj.yStd + obj.yMean;
             std = y_s2 * obj.yStd;
             
+        end
+        
+        function [dyS, var] = predictDerivative(obj,xSIn)
+            % this does not work with basis functions currently
+            
+            %Normalize the C++ way
+            xS = zeros(1,obj.m);
+            for i = 1 : obj.m
+                xS(1,i) = (xSIn(1,i) - obj.xMean(1,i)) / obj.xStd(1,i);
+            end
+            
+            dks = zeros(obj.n,1);
+            for i = 1 : obj.n
+                dks(i) = - obj.kernel(obj.xD(i,:),xS,obj.hyperParameter) - (xS - obj.xD(i,:))/obj.hyperParameter.l; 
+            end
+
+            dyS = (ks.' * obj.KyInv * (obj.yD - obj.meanD));
+            var = 0;
         end
     end
 end
