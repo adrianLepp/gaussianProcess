@@ -100,12 +100,12 @@ classdef GaussianProcess < handle
             end
             
             %% cholesky
-            obj.Lt = chol(obj.K + hyperParameter.sigmaN^2*eye(obj.n)); %upper triangular matrix
-            obj.L = obj.Lt.';
-            %obj.alpha = obj.L.'\(obj.L \ obj.yD);
-            opsLt.LT = true;
-            opsUt.UT = true;
-            obj.alpha = linsolve(obj.Lt,(linsolve(obj.L,obj.yD,opsLt)),opsUt);
+%             obj.Lt = chol(obj.K + hyperParameter.sigmaN^2*eye(obj.n)); %upper triangular matrix
+%             obj.L = obj.Lt.';
+%             %obj.alpha = obj.L.'\(obj.L \ obj.yD);
+%             opsLt.LT = true;
+%             opsUt.UT = true;
+%             obj.alpha = linsolve(obj.Lt,(linsolve(obj.L,obj.yD,opsLt)),opsUt);
            
         end
         

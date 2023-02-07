@@ -34,7 +34,7 @@ classdef ParticleFilter < handle
             w = zeros(1,obj.s);
     
             for l = 1 : obj.s
-                xPrio(l,:) = obj.system.stateTransition(obj.xPost(l,:),dt);
+                [xPrio(l,:),~,~] = obj.system.stateTransition(obj.xPost(l,:),dt);
                 [yCalc,~] = obj.system.measurement(xPrio(l,:));
         
                 %w(1,l) = 2*pi ^(- n / 2) * det(obj.system.sigmaY)^(-1/2) * exp(-1/2 * (y - yCalc) * inv(obj.system.sigmaY) * (y - yCalc).');

@@ -41,16 +41,16 @@ classdef UnscentedKalmanFilter < FilterClass
         end
         
        
-        function [mu,Sigma] = prediction(obj,muPost,SigmaPost,yMeas,dt)
+        function [mu,Sigma] = prediction(obj,muPost,SigmaPost,yMeas,u,dt)
             
           
             xSigmaPost = obj.sigmaPoints(muPost,SigmaPost,obj.gamma); %   s x n
             
             %x Prio sigma Points
             xSigmaPrio = zeros(obj.s, obj.n); %                           s x n
-            [xSigmaPrio(1,:),~,Q] = obj.system.stateTransition(xSigmaPost(1,:),dt);
+            [xSigmaPrio(1,:),~,Q] = obj.system.stateTransition(xSigmaPost(1,:),u,dt);
             for i = 2 : obj.s
-                [xSigmaPrio(i,:),~,~] = obj.system.stateTransition(xSigmaPost(i,:),dt);
+                [xSigmaPrio(i,:),~,~] = obj.system.stateTransition(xSigmaPost(i,:),u,dt);
             end
             
             %x Prio estimate and variance
@@ -66,9 +66,9 @@ classdef UnscentedKalmanFilter < FilterClass
             
             % y sigma Points
             ySigma = zeros(obj.s, obj.m);
-            [ySigma(1,:),R] = obj.system.measurement(xSigmaPrio(1,:));
+            [ySigma(1,:),R] = obj.system.measurement(xSigmaPrio(1,:),u);
             for i = 2 : obj.s
-                [ySigma(i,:),~] = obj.system.measurement(xSigmaPrio(i,:));
+                [ySigma(i,:),~] = obj.system.measurement(xSigmaPrio(i,:),u);
             end
             
             %y Calc with variance
