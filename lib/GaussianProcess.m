@@ -73,12 +73,13 @@ classdef GaussianProcess < handle
             
             if isfield(obj.hyperParameter, "beta")  && isfield(obj.hyperParameter, "B")
                 obj.meanGP = true;
-                obj.H = zeros(2, obj.n);
+                dimH = size(obj.hyperParameter.beta,1);
+                obj.H = zeros(dimH, obj.n);
                 b = obj.hyperParameter.beta;
                 noParam.beta = 1; % to calculate h without b, one can set b=1 and then transpose h again. Not best style though
                 for i = 1 : obj.n
                     obj.H(:,i) = obj.meanFct(xD(i,:),noParam).';
-                    for j = 1 : 2
+                    for j = 1 : dimH
                         obj.H(j,i) = (obj.H(j,i) - obj.yMean) / obj.yStd;
                     end
                 end

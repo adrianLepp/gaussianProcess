@@ -9,7 +9,7 @@ function dx1 = meanDx1(x,hyperparameter)
     beta = hyperparameter.beta;
 
     h = zeros(2,1);
-    h(1,1) = 1 / A;
+    h(1,1) = 1 / A * x(1,4);
     h(2,1) = - 1 / A * sign(x(1,1)-x(1,3)) * sqrt(2*g*abs(x(1,1)-x(1,3)));
     
     dx1 = h.' * beta;
