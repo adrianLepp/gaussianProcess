@@ -66,9 +66,10 @@ classdef UnscentedKalmanFilter2 < FilterClass
             
             % y sigma Points
             ySigma = zeros(obj.s, obj.m);
-            [ySigma(1,:),R] = obj.system.measurement(xSigmaPrio(1,:),u);
+            ySigma(1,:) = obj.system.measurement(xSigmaPrio(1,:),obj.system.sigmaY,obj.system.m);
+            R = obj.system.sigmaY;
             for i = 2 : obj.s
-                [ySigma(i,:),~] = obj.system.measurement(xSigmaPrio(i,:),u);
+                ySigma(i,:) = obj.system.measurement(xSigmaPrio(i,:),obj.system.sigmaY,obj.system.m);
             end
             
             %y Calc with variance

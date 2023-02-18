@@ -3,18 +3,19 @@ classdef DynamicSystemGP2
 % defined as abstract in AbsClass
     properties
       transitionGP(:,1) GaussianProcess
-      measurementGP(:,1) GaussianProcess
       n
       sigmaX
       sigmaY
       m
+      measurement
     end
     methods
-      function obj = DynamicSystemGP2(xD,uD,dxD,hyperparameter,kernel,mean,sigmaX,sigmaY)
+      function obj = DynamicSystemGP2(xD,uD,dxD,hyperparameter,kernel,mean,measurement,sigmaX,sigmaY,m)
            obj.n = size(dxD,2);
-           obj.m = 3;
+           obj.m = m;
            obj.sigmaX = sigmaX;
            obj.sigmaY = sigmaY;
+           obj.measurement = measurement;
 
            for i = 1 : obj.n
                obj.transitionGP(i) = GaussianProcess([xD,uD],dxD(:,i),hyperparameter{i},kernel{i},mean{i});
@@ -31,11 +32,6 @@ classdef DynamicSystemGP2
           
           xKK = xK + dxKK;
           
-      end
-      
-      function [yKK,sigma] = measurement(obj,xKK,u)          
-          yKK = xKK + randn(1,obj.m) * obj.sigmaY;
-          sigma = obj.sigmaY;
       end
    end
 end
