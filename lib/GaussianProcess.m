@@ -48,7 +48,8 @@ classdef GaussianProcess < handle
                 obj.xMean(1,i) = mean(xD(:,i));
             end
             obj.yStd = std(yD);
-            obj.yMean = mean(yD);
+            %obj.yMean = mean(yD);
+            obj.yMean = 0;
             
             for l = 1 : obj.n
                 for i = 1: obj.m
@@ -73,30 +74,12 @@ classdef GaussianProcess < handle
             obj.meanD = zeros(obj.n,1);
             
             if isfield(obj.hyperParameter, "beta")  && isfield(obj.hyperParameter, "B")
-                %%V1
-                
-%                 obj.meanGP = true;
-%                 dimH = size(obj.hyperParameter.beta,1);
-%                 obj.H = zeros(dimH, obj.n);
-%                 b = obj.hyperParameter.beta;
-%                 noParam.beta = 1; % to calculate h without b, one can set b=1 and then transpose h again. Not best style though
-%                 for i = 1 : obj.n
-%                     obj.H(:,i) = obj.meanFct(xD(i,:),noParam).';
-%                     for j = 1 : dimH
-%                         obj.H(j,i) = (obj.H(j,i) - obj.yMean) / obj.yStd;
-%                     end
-%                 end
-% 
-%                 betaEst = (obj.hyperParameter.B^-1 + obj.H * obj.KyInv * obj.H.')^-1  * (obj.H * obj.KyInv * obj.yD + obj.hyperParameter.B^-1 * b);
-%                 obj.hyperParameter.beta = betaEst;
+%                 %%V1
 %                 
-%                 obj.meanCovMatrix = (obj.hyperParameter.B^-1 + obj.H * obj.KyInv * obj.H.' )^-1;
-                
-                %% V2 with B^-1 = 0 and b = 0
                 obj.meanGP = true;
                 dimH = size(obj.hyperParameter.beta,1);
                 obj.H = zeros(dimH, obj.n);
-                %b = obj.hyperParameter.beta;
+                b = obj.hyperParameter.beta;
                 noParam.beta = 1; % to calculate h without b, one can set b=1 and then transpose h again. Not best style though
                 for i = 1 : obj.n
                     obj.H(:,i) = obj.meanFct(xD(i,:),noParam).';
@@ -105,10 +88,30 @@ classdef GaussianProcess < handle
                     end
                 end
 
-                betaEst = (obj.H * obj.KyInv * obj.H.')^-1  * (obj.H * obj.KyInv * obj.yD);
+                betaEst = (obj.hyperParameter.B^-1 + obj.H * obj.KyInv * obj.H.')^-1  * (obj.H * obj.KyInv * obj.yD + obj.hyperParameter.B^-1 * b);
                 obj.hyperParameter.beta = betaEst;
                 
-                obj.meanCovMatrix = (obj.H * obj.KyInv * obj.H.' )^-1;
+                obj.meanCovMatrix = (obj.hyperParameter.B^-1 + obj.H * obj.KyInv * obj.H.' )^-1;
+                
+                %% V2 with B^-1 = 0 and b = 0
+%                 obj.meanGP = true;
+%                 dimH = size(obj.hyperParameter.beta,1);
+%                 obj.H = zeros(dimH, obj.n);
+%                 %b = obj.hyperParameter.beta;
+%                 noParam.beta = 1; % to calculate h without b, one can set b=1 and then transpose h again. Not best style though
+%                 for i = 1 : obj.n
+%                     obj.H(:,i) = obj.meanFct(xD(i,:),noParam).';
+%                     for j = 1 : dimH
+%                         obj.H(j,i) = (obj.H(j,i) - obj.yMean) / obj.yStd;
+%                     end
+%                 end
+%                 %(obj.H * obj.KyInv * obj.H.')^-1
+%                 %obj.H * obj.KyInv * obj.yD
+% 
+%                 betaEst = (obj.H * obj.KyInv * obj.H.')^-1  * (obj.H * obj.KyInv * obj.yD);
+%                 obj.hyperParameter.beta = betaEst;
+%                 
+%                 obj.meanCovMatrix = (obj.H * obj.KyInv * obj.H.' )^-1;
             end
             
             meanD = zeros(obj.n,1);
