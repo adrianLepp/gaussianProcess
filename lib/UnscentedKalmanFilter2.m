@@ -25,7 +25,7 @@ classdef UnscentedKalmanFilter2 < FilterClass
             obj.m = obj.system.m;
             
             alpha = 1 ; % my choise in combination with kappa for sigma-points in 68% confidence interval
-            kappa = 200; % my choise in combination with alpha for sigma-points in 68% confidence interval
+            kappa = 1000; % my choise in combination with alpha for sigma-points in 68% confidence interval
             beta =0; % optimal for gaussian distribution
             
             lambda = alpha^2 * (obj.n + kappa) - obj.n;

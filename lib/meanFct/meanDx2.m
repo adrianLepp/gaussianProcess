@@ -10,8 +10,8 @@ function dx2 = meanDx2(x,hyperparameter)
 
     h = zeros(2,1);
     %h(1,1) = 1 / A * sign(x(1,3)-x(1,2))*sqrt(2*g*abs(x(1,3)-x(1,2)));
-    h(2,1) = 1 / A * sqrt(2*g*abs(x(1,2)));
     h(1,1) = 1 / A *sqrt(2*g*abs(x(1,3)-x(1,2)));
+    h(2,1) =  - 1 / A * sqrt(2*g*abs(x(1,2)));
     
     
     dx2 = h.' * beta;

@@ -76,28 +76,10 @@ classdef GaussianProcess < handle
             if isfield(obj.hyperParameter, "beta")  && isfield(obj.hyperParameter, "B")
 %                 %%V1
 %                 
-                obj.meanGP = true;
-                dimH = size(obj.hyperParameter.beta,1);
-                obj.H = zeros(dimH, obj.n);
-                b = obj.hyperParameter.beta;
-                noParam.beta = 1; % to calculate h without b, one can set b=1 and then transpose h again. Not best style though
-                for i = 1 : obj.n
-                    obj.H(:,i) = obj.meanFct(xD(i,:),noParam).';
-                    for j = 1 : dimH
-                        obj.H(j,i) = (obj.H(j,i) - obj.yMean) / obj.yStd;
-                    end
-                end
-
-                betaEst = (obj.hyperParameter.B^-1 + obj.H * obj.KyInv * obj.H.')^-1  * (obj.H * obj.KyInv * obj.yD + obj.hyperParameter.B^-1 * b);
-                obj.hyperParameter.beta = betaEst;
-                
-                obj.meanCovMatrix = (obj.hyperParameter.B^-1 + obj.H * obj.KyInv * obj.H.' )^-1;
-                
-                %% V2 with B^-1 = 0 and b = 0
 %                 obj.meanGP = true;
 %                 dimH = size(obj.hyperParameter.beta,1);
 %                 obj.H = zeros(dimH, obj.n);
-%                 %b = obj.hyperParameter.beta;
+%                 b = obj.hyperParameter.beta;
 %                 noParam.beta = 1; % to calculate h without b, one can set b=1 and then transpose h again. Not best style though
 %                 for i = 1 : obj.n
 %                     obj.H(:,i) = obj.meanFct(xD(i,:),noParam).';
@@ -105,13 +87,31 @@ classdef GaussianProcess < handle
 %                         obj.H(j,i) = (obj.H(j,i) - obj.yMean) / obj.yStd;
 %                     end
 %                 end
-%                 %(obj.H * obj.KyInv * obj.H.')^-1
-%                 %obj.H * obj.KyInv * obj.yD
 % 
-%                 betaEst = (obj.H * obj.KyInv * obj.H.')^-1  * (obj.H * obj.KyInv * obj.yD);
+%                 betaEst = (obj.hyperParameter.B^-1 + obj.H * obj.KyInv * obj.H.')^-1  * (obj.H * obj.KyInv * obj.yD + obj.hyperParameter.B^-1 * b);
 %                 obj.hyperParameter.beta = betaEst;
 %                 
-%                 obj.meanCovMatrix = (obj.H * obj.KyInv * obj.H.' )^-1;
+%                 obj.meanCovMatrix = (obj.hyperParameter.B^-1 + obj.H * obj.KyInv * obj.H.' )^-1;
+%                 
+                %% V2 with B^-1 = 0 and b = 0
+                obj.meanGP = true;
+                dimH = size(obj.hyperParameter.beta,1);
+                obj.H = zeros(dimH, obj.n);
+                %b = obj.hyperParameter.beta;
+                noParam.beta = 1; % to calculate h without b, one can set b=1 and then transpose h again. Not best style though
+                for i = 1 : obj.n
+                    obj.H(:,i) = obj.meanFct(xD(i,:),noParam).';
+                    for j = 1 : dimH
+                        obj.H(j,i) = (obj.H(j,i) - obj.yMean) / obj.yStd;
+                    end
+                end
+                %(obj.H * obj.KyInv * obj.H.')^-1
+                %obj.H * obj.KyInv * obj.yD
+
+                betaEst = (obj.H * obj.KyInv * obj.H.')^-1  * (obj.H * obj.KyInv * obj.yD);
+                obj.hyperParameter.beta = betaEst;
+                
+                obj.meanCovMatrix = (obj.H * obj.KyInv * obj.H.' )^-1;
             end
             
             meanD = zeros(obj.n,1);
@@ -132,6 +132,20 @@ classdef GaussianProcess < handle
 %             opsUt.UT = true;
 %             obj.alpha = linsolve(obj.Lt,(linsolve(obj.L,obj.yD,opsLt)),opsUt);
            
+        end
+        
+        function [yS,std] = predictOnlyMean(obj,xSIn)
+            %predict Summary of this method goes here
+            %   Detailed explanation goes here
+ 
+            %Normalize the Matlab way
+            %xS = (xS - obj.xMean) ./ obj.xStd ;
+            
+            %Normalize the C++ way
+            
+            yS = obj.meanFct(xSIn, obj.hyperParameter);
+            
+            std = 1e-7;
         end
         
         function [yS,std] = predict(obj,xSIn)
